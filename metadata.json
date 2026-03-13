@@ -1,0 +1,7 @@
+{
+  "name": "[gantt] v8 Scheduling Wizard Pro",
+  "description": "A high-performance enterprise-grade scheduling wizard in a sticky side panel, featuring dynamic branching, resource allocation, and real-time conflict checking.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
