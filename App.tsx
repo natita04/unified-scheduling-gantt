@@ -9,7 +9,7 @@ import {
   RefreshCw, List, Clock, AlertTriangle, CheckCircle2, MoreHorizontal, X, CheckCircle,
   Mountain, PlusCircle, UserCircle, Wand2, Headset, Map, Car, Building2, Phone, CalendarCheck,
   ExternalLink, Square, Coffee, DoorOpen, Truck, ChevronUp, Trash2, Info, Eye, Globe,
-  Lock, PersonStanding
+  Lock, PersonStanding, Sparkles, Check
 } from 'lucide-react';
 import { MOCK_RESOURCES, MOCK_CUSTOMERS } from './constants';
 import { SchedulingState, ServiceMode, WorkType } from './types';
@@ -96,69 +96,63 @@ const CancelConfirmationModal: React.FC<{
         </button>
 
         <div className="px-6 py-6 border-b border-gray-100 text-center">
-          <h3 className="text-xl font-bold text-[#002d5b]">Cancel {task.title}</h3>
+          <h3 className="text-xl font-bold text-[#002d5b]">Cancel Appointment</h3>
         </div>
-        
+
         <div className="p-6 space-y-5">
-          <div className="text-center text-gray-600 text-sm leading-relaxed max-w-sm mx-auto">
-            <p>Are you sure you want to cancel the appointment? If you cancel it will be removed from the Gantt.</p>
-          </div>
-          
-          <div className="bg-white rounded-xl border border-gray-100 p-5 grid grid-cols-2 gap-y-4 gap-x-6 shadow-sm">
-            <div className="col-span-2 pb-2 border-b border-gray-50">
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Appointment ID</p>
-              <p className="text-sm font-bold text-blue-600">{task.id}</p>
-            </div>
-            
+          <div className="space-y-3.5">
             <div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Account</p>
-              <p className="text-[13px] font-semibold text-gray-700">{task.customer || 'N/A'}</p>
+              <p className="text-[11px] text-gray-500 mb-1">Appointment Name</p>
+              <p className="text-[13px] font-medium text-blue-600">{task.id.replace(/-SFT-\w+/g, '')} / {task.title}</p>
             </div>
 
-            <div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Resource</p>
-              <p className="text-[13px] font-semibold text-gray-700">{task.resourceName}</p>
-            </div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3.5">
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Assigned Resource</p>
+                <p className="text-[13px] font-medium text-blue-600">{task.resourceName}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Appointment Type</p>
+                <p className="text-[13px] text-gray-800 font-medium">{task.type === 'INFIELD' ? 'In-Field' : task.type === 'ONSITE' ? 'On-Site' : task.type === 'VIDEO' ? 'Video' : task.type || 'N/A'}</p>
+              </div>
 
-            <div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Scheduled Start</p>
-              <p className="text-[13px] font-semibold text-gray-700">{formatDisplayDate(task.times?.start)}</p>
-            </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Account</p>
+                <p className="text-[13px] font-medium text-blue-600">{task.customer || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Parent Record ID</p>
+                <p className="text-[13px] font-medium text-blue-600">00001009</p>
+              </div>
 
-            <div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Scheduled End</p>
-              <p className="text-[13px] font-semibold text-gray-700">{formatDisplayDate(task.times?.end)}</p>
-            </div>
-
-            <div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Location</p>
-              <p className="text-[13px] font-semibold text-gray-700">{task.location || 'N/A'}</p>
-            </div>
-
-            <div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Appointment Type</p>
-              <p className="text-[13px] font-semibold text-gray-700">{task.type || 'N/A'}</p>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Scheduled Start</p>
+                <p className="text-[13px] text-gray-800 font-medium">{formatDisplayDate(task.times?.start)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Scheduled End</p>
+                <p className="text-[13px] text-gray-800 font-medium">{formatDisplayDate(task.times?.end)}</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5 p-3 bg-[#f0f7ff] rounded-xl border border-[#e0efff]">
-            <Bell size={16} className="text-[#0070d2] shrink-0" />
-            <p className="text-[12px] text-[#0070d2] font-medium">
-              The customer will be automatically notified via SMS message.
-            </p>
+          <div className="border-t border-gray-100" />
+
+          <div className="text-center text-gray-500 text-[13px] leading-relaxed max-w-sm mx-auto">
+            <p>Upon cancellation, the appointment will be removed from the Gantt. The customer will be notified via SMS.</p>
           </div>
         </div>
 
         <div className="px-6 py-5 border-t border-gray-100 flex items-center justify-end gap-3">
-          <button 
+          <button
             onClick={onClose}
-            className="px-6 py-2 text-sm font-bold text-[#0070d2] border border-gray-200 rounded-full hover:bg-gray-50 transition-all"
+            className="px-6 py-2 text-sm font-medium text-[#0070d2] border border-gray-200 rounded-full hover:bg-gray-50 transition-all"
           >
             Go Back
           </button>
-          <button 
+          <button
             onClick={onConfirm}
-            className="px-6 py-2 bg-[#0070d2] text-white text-sm font-bold rounded-full hover:bg-[#005fb2] shadow-sm transition-all"
+            className="px-6 py-2 bg-[#0070d2] text-white text-sm font-medium rounded-full hover:bg-[#005fb2] shadow-sm transition-all"
           >
             Cancel Appointment
           </button>
@@ -168,10 +162,489 @@ const CancelConfirmationModal: React.FC<{
   );
 };
 
-const GanttTask: React.FC<{ 
+const RescheduleModal: React.FC<{
+  appointment: {
+    id: string;
+    title: string;
+    customerName: string;
+    resourceName: string;
+    startTime: string;
+    endTime: string;
+    location: string;
+    type: string;
+  };
+  onConfirm: () => void;
+  onClose: () => void;
+}> = ({ appointment, onConfirm, onClose }) => {
+  const [activeTab, setActiveTab] = useState<'SLOTS' | 'RESOURCES'>('SLOTS');
+  const [viewDate, setViewDate] = useState(new Date(2025, 3, 1));
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedResources, setSelectedResources] = useState<typeof MOCK_RESOURCES>([]);
+  const [resourceTypeFilter, setResourceTypeFilter] = useState<'PERSON' | 'ASSET'>('PERSON');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const displayId = appointment.id.replace(/-SFT-\w+/g, '');
+  const typeLabel = appointment.type === 'INFIELD' ? 'In-Field' : appointment.type === 'ONSITE' ? 'On-Site' : appointment.type === 'VIDEO' ? 'Video' : appointment.type === 'PHONE' ? 'Phone' : appointment.type || 'N/A';
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName = viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const goldenSlots = [
+    { time: '08:00', score: 98 },
+    { time: '09:00', score: 96 },
+    { time: '10:00', score: 94 },
+  ];
+
+  const otherSlots = [
+    { time: '10:30', score: 62 },
+    { time: '11:00', score: 61 },
+    { time: '11:30', score: 58 },
+    { time: '12:00', score: 55 },
+    { time: '13:00', score: 50 },
+    { time: '14:00', score: 45 },
+    { time: '15:00', score: 40 },
+  ];
+
+  const filteredResources = MOCK_RESOURCES.filter(r => {
+    const isPerson = r.role !== 'Room' && r.role !== 'Vehicle';
+    if (resourceTypeFilter === 'PERSON' && !isPerson) return false;
+    if (resourceTypeFilter === 'ASSET' && isPerson) return false;
+    return r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.role.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const toggleResource = (resource: typeof MOCK_RESOURCES[0]) => {
+    const isSelected = selectedResources.some(r => r.id === resource.id);
+    if (isSelected) {
+      setSelectedResources(prev => prev.filter(r => r.id !== resource.id));
+    } else {
+      setSelectedResources(prev => [...prev, resource]);
+      setSearchTerm('');
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const removeResource = (id: string) => {
+    setSelectedResources(prev => prev.filter(r => r.id !== id));
+  };
+
+  const selectDay = (day: number) => {
+    setSelectedDay(day);
+    setSelectedSlot(null);
+    setIsRecurring(false);
+  };
+
+  const canReschedule = selectedSlot && selectedDay && (activeTab === 'SLOTS' || selectedResources.length > 0);
+
+  const SlotButton = ({ time, score, isGolden }: { time: string; score: number; isGolden: boolean }) => {
+    const isSelected = selectedSlot === time;
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedSlot(isSelected ? null : time)}
+          className={`w-full px-4 py-3 rounded-xl text-[13px] font-bold transition-all border-2 flex items-center justify-between ${
+            isSelected
+              ? 'bg-[#0176d3] border-[#0176d3] text-white shadow-md'
+              : 'bg-white border-gray-100 text-gray-700 hover:border-blue-200 hover:bg-blue-50/30'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Calendar size={14} className={isSelected ? 'text-white' : 'text-gray-400'} />
+            <span>{time}</span>
+          </div>
+          <div className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+            isSelected ? 'bg-white/20 text-white' : isGolden ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
+          }`}>
+            {score}%
+          </div>
+        </button>
+        {isSelected && (
+          <div className="px-1 pt-2 pb-1 animate-in slide-in-from-top-2 duration-200">
+            <div
+              className="flex items-center gap-2.5 py-1 cursor-pointer"
+              onClick={() => setIsRecurring(r => !r)}
+            >
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all shadow-sm ${
+                isRecurring ? 'bg-[#0176d3] border-[#0176d3]' : 'bg-white border-gray-300 hover:border-blue-400'
+              }`}>
+                {isRecurring && <Check size={14} strokeWidth={4} className="text-white" />}
+              </div>
+              <span className="text-[13px] font-bold text-gray-700 select-none">Make recurring</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const DatePickerGrid = () => (
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 w-full">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-[13px] font-bold text-gray-800">{monthName}</h4>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setViewDate(new Date(year, month - 1, 1))}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ChevronLeft size={16} className="text-gray-500" />
+          </button>
+          <button
+            onClick={() => setViewDate(new Date(year, month + 1, 1))}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ChevronRight size={16} className="text-gray-500" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <div key={`${d}-${i}`} className="text-center text-[10px] font-bold text-gray-400 uppercase">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} className="h-8 w-8" />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const isSelected = selectedDay === day;
+          return (
+            <button
+              key={day}
+              onClick={() => selectDay(day)}
+              className={`h-8 w-8 rounded-full text-[11px] font-medium flex items-center justify-center transition-all mx-auto ${
+                isSelected
+                  ? 'bg-[#0176d3] text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const InfoBubble = ({ isResources = false }: { isResources?: boolean }) => (
+    <div className="bg-[#f0f9ff]/95 border border-[#dbeafe] p-3 rounded-xl flex items-start gap-3 mt-3">
+      <Info size={14} className="text-[#0070d2] shrink-0 mt-0.5" />
+      <p className="text-[11px] font-medium text-[#0070d2] leading-tight">
+        {isResources
+          ? 'Common slots available for all selected resources and assets'
+          : 'Service resource will be assigned based on availability for the preferred slot'
+        }
+      </p>
+    </div>
+  );
+
+  const selectedDateLabel = selectedDay
+    ? new Date(year, month, selectedDay).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-[1200px] h-[900px] max-w-full max-h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-300 ease-out">
+
+        {/* Header */}
+        <div className="border-b border-gray-200 px-8 py-6 bg-gray-50/80 flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="font-bold text-xl text-[#001639]">Reschedule Appointment</h2>
+            <p className="text-[10px] font-bold text-[#0176d3] uppercase tracking-wider mt-1">SELECT SLOTS OR RESOURCES</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <X size={24} className="text-gray-500" />
+          </button>
+        </div>
+
+        {/* Info Block — 4 labeled fields in one row */}
+        <div className="border-b border-gray-200 px-8 py-4 bg-white shrink-0">
+          <div className="grid grid-cols-4 gap-8">
+            <div>
+              <p className="text-[11px] text-gray-400 font-medium mb-1">Appointment Name</p>
+              <p className="text-[13px] font-bold text-blue-600 truncate">{displayId} / {appointment.title}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-gray-400 font-medium mb-1">Appointment Type</p>
+              <p className="text-[13px] font-medium text-gray-800">{typeLabel}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-gray-400 font-medium mb-1">Scheduled Start</p>
+              <p className="text-[13px] font-medium text-gray-800">{appointment.startTime}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-gray-400 font-medium mb-1">Scheduled End</p>
+              <p className="text-[13px] font-medium text-gray-800">{appointment.endTime}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body: sidebar tabs + main content */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* Vertical Tab Sidebar */}
+          <div className="w-[240px] border-r border-gray-100 px-5 py-8 flex flex-col gap-2 shrink-0">
+            <button
+              onClick={() => { setActiveTab('SLOTS'); setSelectedResources([]); setSelectedSlot(null); setIsRecurring(false); }}
+              className={`w-full text-left px-4 py-4 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 ${
+                activeTab === 'SLOTS'
+                  ? 'bg-blue-50 text-[#0176d3] shadow-sm ring-1 ring-blue-100'
+                  : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+              }`}
+            >
+              <Calendar size={16} />
+              BY AVAILABLE SLOTS
+            </button>
+            <button
+              onClick={() => { setActiveTab('RESOURCES'); setSelectedSlot(null); setIsRecurring(false); }}
+              className={`w-full text-left px-4 py-4 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 ${
+                activeTab === 'RESOURCES'
+                  ? 'bg-blue-50 text-[#0176d3] shadow-sm ring-1 ring-blue-100'
+                  : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+              }`}
+            >
+              <Users size={16} />
+              BY REQUIRED RESOURCES
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-8 py-8">
+            {activeTab === 'SLOTS' ? (
+              /* SLOTS TAB */
+              <div className="grid grid-cols-2 gap-10 h-full items-start animate-in slide-in-from-left-2">
+                {/* Left: Calendar + info */}
+                <div className="sticky top-0">
+                  <DatePickerGrid />
+                  <InfoBubble />
+                </div>
+
+                {/* Right: Time Slots */}
+                <div className="space-y-6">
+                  {/* Golden Slots */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <Sparkles size={12} className="text-amber-500" />
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">GOLDEN SLOTS</p>
+                    </div>
+                    {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                    <div className="space-y-2">
+                      {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
+                    </div>
+                  </div>
+
+                  {/* Other Options */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OTHER OPTIONS</p>
+                    </div>
+                    {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                    <div className="space-y-2">
+                      {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* RESOURCES TAB */
+              <div className="grid grid-cols-2 gap-10 h-full items-stretch animate-in slide-in-from-right-2">
+                {/* Left: Resource selector + calendar */}
+                <div className="space-y-4 sticky top-0">
+                  {/* People / Assets toggle */}
+                  <div className="flex p-1 bg-gray-100 rounded-xl">
+                    <button
+                      onClick={() => setResourceTypeFilter('PERSON')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-bold transition-all ${
+                        resourceTypeFilter === 'PERSON' ? 'bg-white text-[#0176d3] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <User size={14} />
+                      People
+                    </button>
+                    <button
+                      onClick={() => setResourceTypeFilter('ASSET')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-bold transition-all ${
+                        resourceTypeFilter === 'ASSET' ? 'bg-white text-[#0176d3] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <Briefcase size={14} />
+                      Assets
+                    </button>
+                  </div>
+
+                  {/* Search */}
+                  <div className="relative" ref={dropdownRef}>
+                    <div
+                      className={`flex items-center gap-2 p-1.5 border-2 rounded-xl bg-white shadow-sm transition-all cursor-text min-h-[48px] ${
+                        isDropdownOpen ? 'border-[#0176d3]' : 'border-gray-200 focus-within:border-blue-500'
+                      }`}
+                      onClick={() => inputRef.current?.focus()}
+                    >
+                      <div className="p-1 rounded-lg text-white shrink-0 bg-[#0070d2]">
+                        <User size={16} />
+                      </div>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="Search people..."
+                        className="flex-1 min-w-0 bg-transparent outline-none text-[13px] py-1"
+                        value={searchTerm}
+                        onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
+                        onFocus={() => setIsDropdownOpen(true)}
+                      />
+                      <Search className="text-gray-400 mx-1 shrink-0" size={16} />
+                    </div>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1">
+                        <div className="max-h-52 overflow-y-auto custom-scrollbar py-1.5 px-1">
+                          {filteredResources.length > 0 ? (
+                            filteredResources.map((resource) => {
+                              const isSelected = selectedResources.some(r => r.id === resource.id);
+                              return (
+                                <button
+                                  key={resource.id}
+                                  onClick={(e) => { e.stopPropagation(); toggleResource(resource); }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 transition-colors ${
+                                    isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <img src={resource.avatar} alt={resource.name} className="w-7 h-7 rounded-full border shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[12px] font-bold text-gray-800 truncate">{resource.name}</p>
+                                    <p className="text-[10px] text-gray-500">{resource.role}</p>
+                                  </div>
+                                  {isSelected && <Check size={14} className="text-blue-600" />}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="px-3 py-3 text-center text-[12px] text-gray-400 italic">No matches found</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selected Resources List */}
+                  {selectedResources.length > 0 && (
+                    <div className="space-y-1">
+                      {selectedResources.map((res, index) => (
+                        <div key={res.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group">
+                          <img src={res.avatar} alt={res.name} className="w-10 h-10 rounded-full border border-gray-100" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-[13px] font-bold text-gray-800 truncate">{res.name}</p>
+                              {index === 0 && (
+                                <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold uppercase tracking-wider">Primary</span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-gray-500 truncate">{res.role}</p>
+                          </div>
+                          <button
+                            onClick={() => removeResource(res.id)}
+                            className="p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Calendar + info bubble (only when resource selected) */}
+                  {selectedResources.length > 0 && (
+                    <div className="space-y-3 animate-in slide-in-from-top-2">
+                      <DatePickerGrid />
+                      <InfoBubble isResources={true} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Slots or empty state */}
+                <div className="flex flex-col h-full pt-1">
+                  {selectedResources.length === 0 ? (
+                    <div className="flex-1 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center gap-3 min-h-[400px]">
+                      <div className="bg-gray-50 p-4 rounded-full">
+                        <Users size={40} className="text-gray-200" />
+                      </div>
+                      <p className="text-[14px] font-bold text-gray-400">Assign resources to view shared slots</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 animate-in slide-in-from-top-2">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-1">
+                          <Sparkles size={12} className="text-amber-500" />
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">GOLDEN SLOTS</p>
+                        </div>
+                        {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                        <div className="space-y-2">
+                          {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-1">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OTHER OPTIONS</p>
+                        </div>
+                        {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                        <div className="space-y-2">
+                          {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-8 py-5 border-t border-gray-200 bg-white flex items-center gap-4 shrink-0">
+          <button
+            onClick={onClose}
+            className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <ChevronLeft size={18} />
+            Back
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={!canReschedule}
+            className={`flex-[2] px-6 py-3 rounded-xl font-semibold text-sm transition-all shadow-md ${
+              canReschedule
+                ? 'bg-[#0176d3] text-white hover:bg-blue-700 shadow-blue-600/20'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Reschedule
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GanttTask: React.FC<{
   id: string,
   type: 'INFIELD' | 'ONSITE' | 'VIDEO' | 'PHONE',
-  title: string, 
+  title: string,
   status: string, 
   customer?: string,
   duration: string, 
@@ -691,6 +1164,9 @@ const App: React.FC = () => {
   const [canceledTaskIds, setCanceledTaskIds] = useState<Set<string>>(new Set());
   const [cancelingTask, setCancelingTask] = useState<CancelTaskData | null>(null);
 
+  // Reschedule Modal State
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+
   // New Filter States
   const [appointmentTypeFilters, setAppointmentTypeFilters] = useState<string[]>([]);
   const [resourceTypeFilters, setResourceTypeFilters] = useState<string[]>([]);
@@ -781,8 +1257,7 @@ const App: React.FC = () => {
         type: task.type
       }
     });
-    setPanelMode('reschedule');
-    setIsPanelOpen(true);
+    setRescheduleModalOpen(true);
   };
 
   const handleTaskCancelRequest = (task: CancelTaskData) => {
@@ -802,6 +1277,22 @@ const App: React.FC = () => {
       setTimeout(() => {
         setToast(null);
       }, 5000);
+    }
+  };
+
+  const confirmReschedule = () => {
+    if (rescheduleData?.currentAppointment) {
+      const newCanceledIds = new Set(canceledTaskIds);
+      newCanceledIds.add(rescheduleData.currentAppointment.id);
+      setCanceledTaskIds(newCanceledIds);
+
+      const displayId = rescheduleData.currentAppointment.id.replace(/-SFT-\w+/g, '');
+      const message = `${displayId} / ${rescheduleData.currentAppointment.title} was rescheduled successfully.`;
+      setToast({ show: true, message, type: 'success' });
+      setRescheduleModalOpen(false);
+      setRescheduleData(null);
+
+      setTimeout(() => setToast(null), 5000);
     }
   };
 
@@ -985,10 +1476,18 @@ const App: React.FC = () => {
       )}
 
       {cancelingTask && (
-        <CancelConfirmationModal 
-          task={cancelingTask} 
-          onConfirm={confirmCancellation} 
-          onClose={() => setCancelingTask(null)} 
+        <CancelConfirmationModal
+          task={cancelingTask}
+          onConfirm={confirmCancellation}
+          onClose={() => setCancelingTask(null)}
+        />
+      )}
+
+      {rescheduleModalOpen && rescheduleData?.currentAppointment && (
+        <RescheduleModal
+          appointment={rescheduleData.currentAppointment}
+          onConfirm={confirmReschedule}
+          onClose={() => setRescheduleModalOpen(false)}
         />
       )}
 
