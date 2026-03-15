@@ -80,14 +80,23 @@ const formatDisplayDate = (dateStr?: string) => {
   }
 };
 
-const CancelConfirmationModal: React.FC<{ 
-  task: CancelTaskData; 
-  onConfirm: () => void; 
-  onClose: () => void 
+const CANCEL_REASONS = [
+  'No longer needed',
+  'Changed provider',
+  'Will contact us at a later time',
+];
+
+const CancelConfirmationModal: React.FC<{
+  task: CancelTaskData;
+  onConfirm: () => void;
+  onClose: () => void
 }> = ({ task, onConfirm, onClose }) => {
+  const [reason, setReason] = useState('');
+  const [notes, setNotes] = useState('');
+
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 relative">
+      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 relative">
         <button 
           onClick={onClose} 
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors z-10"
@@ -99,7 +108,7 @@ const CancelConfirmationModal: React.FC<{
           <h3 className="text-xl font-bold text-[#002d5b]">Cancel Appointment</h3>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           <div className="space-y-3.5">
             <div>
               <p className="text-[11px] text-gray-500 mb-1">Appointment Name</p>
@@ -138,12 +147,40 @@ const CancelConfirmationModal: React.FC<{
 
           <div className="border-t border-gray-100" />
 
-          <div className="text-center text-gray-500 text-[13px] leading-relaxed max-w-sm mx-auto">
+          {/* Reason dropdown */}
+          <div>
+            <label className="block text-[11px] text-gray-500 mb-1.5">Reason <span className="text-red-400">*</span></label>
+            <div className="relative">
+              <select
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#0070d2] transition-all pr-9"
+              >
+                <option value="">Select a reason...</option>
+                {CANCEL_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Notes textarea */}
+          <div>
+            <label className="block text-[11px] text-gray-500 mb-1.5">Notes</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Add any additional notes..."
+              rows={3}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-[13px] text-gray-800 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#0070d2] transition-all resize-none"
+            />
+          </div>
+
+          <div className="text-center text-gray-400 text-[12px] leading-relaxed max-w-sm mx-auto">
             <p>Upon cancellation, the appointment will be removed from the Gantt. The customer will be notified via SMS.</p>
           </div>
         </div>
 
-        <div className="px-6 py-5 border-t border-gray-100 flex items-center justify-end gap-3">
+        <div className="px-6 py-5 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
           <button
             onClick={onClose}
             className="px-6 py-2 text-sm font-medium text-[#0070d2] border border-gray-200 rounded-full hover:bg-gray-50 transition-all"
@@ -152,7 +189,12 @@ const CancelConfirmationModal: React.FC<{
           </button>
           <button
             onClick={onConfirm}
-            className="px-6 py-2 bg-[#0070d2] text-white text-sm font-medium rounded-full hover:bg-[#005fb2] shadow-sm transition-all"
+            disabled={!reason}
+            className={`px-6 py-2 text-sm font-medium rounded-full shadow-sm transition-all ${
+              reason
+                ? 'bg-[#0070d2] text-white hover:bg-[#005fb2]'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
             Cancel Appointment
           </button>
