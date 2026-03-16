@@ -183,7 +183,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   return (
     <>
-      <div className={`h-full bg-white border-l border-gray-200 shadow-xl flex flex-col transition-all duration-300 ease-out overflow-hidden shrink-0 ${isOpen ? 'w-80' : 'w-0'}`}>
+      <div className={`bg-white border-l border-gray-200 shadow-xl flex flex-col transition-all duration-300 ease-out overflow-hidden shrink-0 self-stretch ${isOpen ? 'w-80' : 'w-0'}`}>
         {/* Header */}
         <div className="border-b border-gray-200 p-4 flex items-center justify-between">
           <div className="flex items-center gap-4">

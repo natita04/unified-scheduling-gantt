@@ -1492,7 +1492,7 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#f3f3f3] flex flex-col font-sans text-slate-800 relative">
+    <div className="h-screen bg-[#f3f3f3] flex flex-col font-sans text-slate-800 relative overflow-hidden">
       {toast?.show && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
           {toast.type === 'warning' ? (
