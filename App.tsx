@@ -1198,7 +1198,7 @@ const App: React.FC = () => {
   const [isOptimizeDropdownOpen, setIsOptimizeDropdownOpen] = useState(false);
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [toast, setToast] = useState<{ show: boolean, message: string, type?: 'success' | 'warning' } | null>(null);
+  const [toast, setToast] = useState<{ show: boolean, message: string, type?: 'success' | 'warning', showInGantt?: boolean } | null>(null);
   const [showShiftsInline, setShowShiftsInline] = useState(false);
   const [ganttSearch, setGanttSearch] = useState('');
   
@@ -1330,7 +1330,7 @@ const App: React.FC = () => {
 
       const displayId = rescheduleData.currentAppointment.id.replace(/-SFT-\w+/g, '');
       const message = `${displayId} / ${rescheduleData.currentAppointment.title} was rescheduled successfully.`;
-      setToast({ show: true, message, type: 'success' });
+      setToast({ show: true, message, type: 'success', showInGantt: true });
       setRescheduleModalOpen(false);
       setRescheduleData(null);
 
@@ -1511,6 +1511,11 @@ const App: React.FC = () => {
             <div className="bg-[#c6f6d5] border border-[#9ae6b4] shadow-lg rounded-lg py-2.5 px-4 flex items-center gap-3 min-w-[400px]">
               <div className="bg-[#276749] text-white rounded-full p-0.5"><CheckCircle size={14} /></div>
               <p className="text-[#22543d] text-sm font-medium flex-1">{toast.message}</p>
+              {toast.showInGantt && (
+                <button onClick={(e) => e.preventDefault()} className="text-[#276749] text-sm font-semibold underline underline-offset-2 hover:text-[#1a4731] transition-colors shrink-0 whitespace-nowrap">
+                  Show in Gantt
+                </button>
+              )}
               <button onClick={() => setToast(null)} className="text-gray-400 hover:bg-black/5 p-1 rounded transition-colors"><X size={14} /></button>
             </div>
           )}
