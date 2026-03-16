@@ -1564,11 +1564,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      {/* Content area: main column + filter panel side-by-side */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-
-      {/* Main Action Header */}
+      {/* Main Action Header — full width, above the push-panel area */}
       <div className="bg-[#f3f3f3] px-6 py-4 flex items-center justify-between border-b border-gray-200/50">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-[#e01a59] rounded-full flex items-center justify-center text-white shadow-sm border border-white/20"><Headset size={20} /></div>
@@ -1586,23 +1582,15 @@ const App: React.FC = () => {
             )}
           </div>
           <button className="p-2 border border-gray-300 bg-white rounded-lg hover:bg-gray-50 shadow-sm text-[#0176d3] transition-colors ml-1"><Map size={18} /></button>
-          <button
-            onClick={() => setFilterPanelOpen(true)}
-            className={`p-2 border rounded-lg shadow-sm transition-all flex items-center justify-center ml-1 ${
-              (appointmentTypeFilters.length > 0 || resourceTypeFilters.length > 0 || skillFilters.length > 0 || showShiftsInline)
-                ? 'bg-[#0176d3] border-[#0176d3] text-white hover:bg-[#005fb2]'
-                : filterPanelOpen
-                  ? 'bg-blue-50 border-[#0176d3] text-[#0176d3]'
-                  : 'bg-white border-gray-300 text-[#0176d3] hover:bg-gray-50'
-            }`}
-          >
-            <Filter size={18} />
-          </button>
           <button className="flex items-center gap-1 p-2 border border-gray-300 bg-white rounded-lg shadow-sm text-[#0176d3] hover:bg-gray-50 transition-colors ml-1"><Settings size={18} /><ChevronDown size={12} /></button>
         </div>
       </div>
 
-      <div className="bg-white border-y border-gray-200 px-6 py-2 flex items-center gap-4 z-20">
+      {/* Content area: main column + filter panel side-by-side — starts from white toolbar */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+      <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-4 z-20">
         <div className="flex items-center border rounded overflow-hidden shadow-sm">
           <button className="px-3 py-1 text-xs font-bold border-r bg-gray-50 hover:bg-gray-100 flex items-center gap-1 text-gray-600">1 Day <ChevronDown size={12} /></button>
           <button className="px-3 py-1 text-xs font-bold bg-white hover:bg-gray-100 text-gray-600">Today</button>
@@ -1620,6 +1608,15 @@ const App: React.FC = () => {
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input type="text" placeholder="Search the Gantt..." value={ganttSearch} onChange={(e) => setGanttSearch(e.target.value)} className="border rounded pl-8 pr-3 py-1 text-xs w-48 focus:outline-none shadow-sm" />
         </div>
+        <button
+          onClick={() => setFilterPanelOpen(f => !f)}
+          className={`relative p-1.5 border rounded-lg shadow-sm transition-all text-gray-600 hover:bg-gray-50 ${filterPanelOpen ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-300'}`}
+        >
+          <Filter size={15} />
+          {(appointmentTypeFilters.length > 0 || resourceTypeFilters.length > 0 || skillFilters.length > 0 || showShiftsInline) && (
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+          )}
+        </button>
       </div>
 
       <main className="flex-1 overflow-hidden flex flex-col">
