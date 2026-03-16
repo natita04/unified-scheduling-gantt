@@ -249,32 +249,11 @@ const RescheduleModal: React.FC<{
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthName = viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  // Calculate appointment duration in minutes from "MM/DD/YYYY HH:MM AM/PM" format
-  const durationMinutes = (() => {
-    try {
-      const parseMinutes = (str: string) => {
-        const parts = str.trim().split(' ');
-        const [h, m] = parts[1].split(':').map(Number);
-        const isPM = parts[2]?.toUpperCase() === 'PM';
-        const hour = isPM && h !== 12 ? h + 12 : !isPM && h === 12 ? 0 : h;
-        return hour * 60 + m;
-      };
-      const diff = parseMinutes(appointment.endTime) - parseMinutes(appointment.startTime);
-      return diff > 0 ? diff : 60;
-    } catch { return 60; }
-  })();
-
-  const addMins = (time: string, mins: number) => {
-    const [h, m] = time.split(':').map(Number);
-    const total = h * 60 + m + mins;
-    return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-  };
-
   const goldenSlots = [
     { time: '08:00', score: 98 },
     { time: '09:00', score: 96 },
     { time: '10:00', score: 94 },
-  ].map(s => ({ ...s, endTime: addMins(s.time, durationMinutes) }));
+  ];
 
   const otherSlots = [
     { time: '10:30', score: 62 },
@@ -284,7 +263,7 @@ const RescheduleModal: React.FC<{
     { time: '13:00', score: 50 },
     { time: '14:00', score: 45 },
     { time: '15:00', score: 40 },
-  ].map(s => ({ ...s, endTime: addMins(s.time, durationMinutes) }));
+  ];
 
   const filteredResources = MOCK_RESOURCES.filter(r => {
     const isPerson = r.role !== 'Room' && r.role !== 'Vehicle';
@@ -317,7 +296,7 @@ const RescheduleModal: React.FC<{
 
   const canReschedule = selectedSlot && selectedDay && (activeTab === 'SLOTS' || selectedResources.length > 0);
 
-  const SlotButton = ({ time, endTime, score, isGolden }: { time: string; endTime: string; score: number; isGolden: boolean }) => {
+  const SlotButton = ({ time, score, isGolden }: { time: string; score: number; isGolden: boolean }) => {
     const isSelected = selectedSlot === time;
     return (
       <div>
@@ -331,7 +310,7 @@ const RescheduleModal: React.FC<{
         >
           <div className="flex items-center gap-3">
             <Calendar size={14} className={isSelected ? 'text-white' : 'text-gray-400'} />
-            <span className="whitespace-nowrap">{time} – {endTime}</span>
+            <span>{time}</span>
           </div>
           <div className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
             isSelected ? 'bg-white/20 text-white' : isGolden ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
@@ -508,7 +487,7 @@ const RescheduleModal: React.FC<{
                     </div>
                     {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
                     <div className="space-y-2">
-                      {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} endTime={s.endTime} score={s.score} isGolden={true} />)}
+                      {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
                     </div>
                   </div>
 
@@ -519,7 +498,7 @@ const RescheduleModal: React.FC<{
                     </div>
                     {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
                     <div className="space-y-2">
-                      {otherSlots.map(s => <SlotButton key={s.time} time={s.time} endTime={s.endTime} score={s.score} isGolden={false} />)}
+                      {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
                     </div>
                   </div>
                 </div>
@@ -658,7 +637,7 @@ const RescheduleModal: React.FC<{
                         </div>
                         {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
                         <div className="space-y-2">
-                          {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} endTime={s.endTime} score={s.score} isGolden={true} />)}
+                          {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -667,7 +646,7 @@ const RescheduleModal: React.FC<{
                         </div>
                         {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
                         <div className="space-y-2">
-                          {otherSlots.map(s => <SlotButton key={s.time} time={s.time} endTime={s.endTime} score={s.score} isGolden={false} />)}
+                          {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
                         </div>
                       </div>
                     </div>
