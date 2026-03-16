@@ -1564,6 +1564,10 @@ const App: React.FC = () => {
         </div>
       </nav>
 
+      {/* Content area: main column + filter panel side-by-side */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
       {/* Main Action Header */}
       <div className="bg-[#f3f3f3] px-6 py-4 flex items-center justify-between border-b border-gray-200/50">
         <div className="flex items-center gap-4">
@@ -1706,14 +1710,9 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <SidePanel 
-        isOpen={isPanelOpen} 
-        onClose={() => setIsPanelOpen(false)} 
-        onFinish={handleScheduleComplete}
-        mode={panelMode}
-        prefillData={rescheduleData}
-      />
-      <FilterPanel 
+      </div>{/* end main content column */}
+
+      <FilterPanel
         isOpen={filterPanelOpen}
         onClose={() => setFilterPanelOpen(false)}
         showShifts={showShiftsInline}
@@ -1725,7 +1724,6 @@ const App: React.FC = () => {
         skills={skillFilters}
         onSkillsChange={setSkillFilters}
         onSave={() => {
-          // Update legacy filters for backward compatibility with Gantt rendering logic
           setApptFilters({
             inField: appointmentTypeFilters.length === 0 || appointmentTypeFilters.includes('In-Field'),
             onSite: appointmentTypeFilters.length === 0 || appointmentTypeFilters.includes('Onsite'),
@@ -1738,6 +1736,16 @@ const App: React.FC = () => {
           setToast({ show: true, message: 'Filters applied successfully', type: 'success' });
           setTimeout(() => setToast(null), 3000);
         }}
+      />
+
+      </div>{/* end flex-row content wrapper */}
+
+      <SidePanel 
+        isOpen={isPanelOpen} 
+        onClose={() => setIsPanelOpen(false)} 
+        onFinish={handleScheduleComplete}
+        mode={panelMode}
+        prefillData={rescheduleData}
       />
       {isPanelOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-[45] transition-opacity" onClick={() => setIsPanelOpen(false)} />}
     </div>
