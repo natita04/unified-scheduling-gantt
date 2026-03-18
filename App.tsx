@@ -1059,8 +1059,12 @@ const GanttShift: React.FC<{
     }, 150);
   };
 
-  const shiftTypeLabel = shift.type === 'INFIELD' ? 'In-Field' : shift.type === 'ONSITE' ? 'On-Site' : 'Video';
+  const shiftTypeLabel = shift.type === 'INFIELD' ? 'In-Field' : shift.type === 'ONSITE' ? 'On-Site' : 'Virtual';
   const assignedCount = Math.floor(Math.random() * 8) + 1;
+  const workAllowed =
+    (resourceName === 'Brooke Weaver' || resourceName === 'Joe Bautista') && shift.type === 'INFIELD'
+      ? 'Quick Inspection, Complex Repair, Break Fix'
+      : 'All';
 
   const PopoverContent = (
     <div
@@ -1121,6 +1125,10 @@ const GanttShift: React.FC<{
             <p className="text-[11px] text-gray-500 mb-1">Shift Type</p>
             <p className="text-[13px] text-gray-800 font-medium">{shiftTypeLabel}</p>
           </div>
+          <div className="col-span-2">
+            <p className="text-[11px] text-gray-500 mb-1">Work Allowed</p>
+            <p className="text-[13px] text-gray-800 font-medium">{workAllowed}</p>
+          </div>
         </div>
       </div>
 
@@ -1151,7 +1159,7 @@ const GanttShift: React.FC<{
             {shift.type === 'VIDEO' && <Globe size={10} className="text-gray-600 shrink-0" />}
             {shift.type === 'INFIELD' && <Car size={10} className="text-gray-600 shrink-0" />}
             <span className="text-[9px] font-bold text-gray-600 truncate">
-              {shift.id} • {shift.type === 'INFIELD' ? 'In-Field' : shift.type === 'ONSITE' ? 'On-Site' : 'Video'}
+              {shift.id} • {shift.type === 'INFIELD' ? 'In-Field' : shift.type === 'ONSITE' ? 'On-Site' : 'Virtual'}
             </span>
           </div>
         </div>
@@ -1180,7 +1188,7 @@ const GanttShift: React.FC<{
             </span>
             <div className="flex items-center gap-1.5 text-[11px] text-gray-600 font-medium">
               <Icon size={12} className="text-gray-500 shrink-0" />
-              <span className="truncate">{shift.type === 'INFIELD' ? 'In-Field' : shift.type === 'ONSITE' ? 'Onsite' : 'Video'} • {shift.status || 'Scheduled'}</span>
+              <span className="truncate">{shift.type === 'INFIELD' ? 'In-Field' : shift.type === 'ONSITE' ? 'Onsite' : 'Virtual'} • {shift.status || 'Scheduled'}</span>
             </div>
           </div>
         </div>
@@ -1396,13 +1404,14 @@ const App: React.FC = () => {
     };
 
     const isRoomAsset = index === 8 || index === 9;
+    const isAsset = resource?.role === 'Room' || resource?.role === 'Vehicle';
 
     shifts.forEach((shift) => {
       const leftVal = parseFloat(shift.left);
       const widthVal = parseFloat(shift.width);
-      
-      if (showShiftsInline) {
-        const isFiltered = 
+
+      if (showShiftsInline && !isAsset) {
+        const isFiltered =
           (shift.type === 'INFIELD' && !apptFilters.inField) ||
           (shift.type === 'ONSITE' && !apptFilters.onSite) ||
           ((shift.type === 'VIDEO' || shift.type === 'PHONE') && !apptFilters.virtual);
