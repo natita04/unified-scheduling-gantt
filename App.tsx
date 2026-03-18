@@ -1650,7 +1650,7 @@ const App: React.FC = () => {
           {filteredResourcesList.map((resource, idx) => {
             const originalIndex = MOCK_RESOURCES.findIndex(r => r.id === resource.id);
             return (
-              <div key={resource.id} className={`flex border-b border-gray-100 group hover:bg-gray-50/30 transition-all ${showShiftsInline ? 'h-24' : 'h-16'}`}>
+              <div key={resource.id} className={`flex border-b border-gray-100 group hover:bg-gray-50/30 transition-all ${showShiftsInline && resource.role !== 'Room' && resource.role !== 'Vehicle' ? 'h-24' : 'h-16'}`}>
                 <div className="w-64 border-r border-gray-200 shrink-0 flex items-center px-4 gap-3">
                    <div className="w-9 h-9 rounded-full bg-blue-500 overflow-hidden shrink-0 border border-gray-100 shadow-sm relative">
                      {resource.avatar === 'ROOM' ? (
