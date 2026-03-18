@@ -12,7 +12,7 @@ import {
   Lock, PersonStanding, Sparkles, Check
 } from 'lucide-react';
 import { MOCK_RESOURCES, MOCK_CUSTOMERS } from './constants';
-import { SchedulingState, ServiceMode, WorkType } from './types';
+import { SchedulingState, ServiceMode, WorkType, RecurrenceConfig } from './types';
 
 interface ShiftData {
   id: string;
@@ -204,6 +204,28 @@ const CancelConfirmationModal: React.FC<{
   );
 };
 
+const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+const DEFAULT_RECURRENCE_MODAL: RecurrenceConfig = {
+  interval: 1,
+  unit: 'week',
+  days: ['T'],
+  endType: 'after',
+  endDate: '',
+  occurrences: 6,
+};
+
+const getScoreExplanation = (score: number): string => {
+  if (score >= 97) return "Aligns best with your objectives — preferred resource is available, travel is minimized, and skill match is excellent.";
+  if (score >= 94) return "Near-perfect fit. Preferred resource is free and highly skilled. Travel distance is within the optimal range.";
+  if (score >= 91) return "Strong alignment. Preferred resource is available with an excellent skill match. Travel is slightly above minimum.";
+  if (score >= 88) return "Very good option. Resource skills meet your requirements and availability is confirmed. Minor travel overhead.";
+  if (score >= 75) return "Good fit overall. A well-matched resource is available, though not your preferred one. Travel is reasonable.";
+  if (score >= 65) return "Moderate alignment. A capable resource is available but travel distance is higher than preferred slots.";
+  if (score >= 60) return "Adequate option. Preferred resource is unavailable at this time and travel overhead is above average.";
+  return "Lower alignment due to resource constraints and non-optimal travel distance at this time slot.";
+};
+
 const RescheduleModal: React.FC<{
   appointment: {
     id: string;
@@ -220,20 +242,28 @@ const RescheduleModal: React.FC<{
 }> = ({ appointment, onConfirm, onClose }) => {
   const [activeTab, setActiveTab] = useState<'SLOTS' | 'RESOURCES'>('SLOTS');
   const [viewDate, setViewDate] = useState(new Date(2025, 3, 1));
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(18);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isRecurring, setIsRecurring] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isTypeOpen, setIsTypeOpen] = useState(false);
   const [selectedResources, setSelectedResources] = useState<typeof MOCK_RESOURCES>([]);
   const [resourceTypeFilter, setResourceTypeFilter] = useState<'PERSON' | 'ASSET'>('PERSON');
+  const [optionalResourceIds, setOptionalResourceIds] = useState<string[]>([]);
+  const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>(DEFAULT_RECURRENCE_MODAL);
+  const [scoreTooltip, setScoreTooltip] = useState<{ text: string; top: number; right: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
+        setIsTypeOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -277,6 +307,7 @@ const RescheduleModal: React.FC<{
     const isSelected = selectedResources.some(r => r.id === resource.id);
     if (isSelected) {
       setSelectedResources(prev => prev.filter(r => r.id !== resource.id));
+      setOptionalResourceIds(prev => prev.filter(oid => oid !== resource.id));
     } else {
       setSelectedResources(prev => [...prev, resource]);
       setSearchTerm('');
@@ -286,6 +317,31 @@ const RescheduleModal: React.FC<{
 
   const removeResource = (id: string) => {
     setSelectedResources(prev => prev.filter(r => r.id !== id));
+    setOptionalResourceIds(prev => prev.filter(oid => oid !== id));
+  };
+
+  const toggleOptional = (id: string) => {
+    setOptionalResourceIds(prev =>
+      prev.includes(id) ? prev.filter(oid => oid !== id) : [...prev, id]
+    );
+  };
+
+  const updateRecurrence = (updates: Partial<RecurrenceConfig>) => {
+    setRecurrenceConfig(prev => ({ ...prev, ...updates }));
+  };
+
+  const toggleDay = (dayIndex: number) => {
+    const dayLetter = DAYS_OF_WEEK[dayIndex];
+    setRecurrenceConfig(prev => {
+      const newDays = [...prev.days];
+      const existingIndex = newDays.indexOf(dayLetter);
+      if (existingIndex > -1) {
+        newDays.splice(existingIndex, 1);
+      } else {
+        newDays.push(dayLetter);
+      }
+      return { ...prev, days: newDays };
+    });
   };
 
   const selectDay = (day: number) => {
@@ -296,7 +352,103 @@ const RescheduleModal: React.FC<{
 
   const canReschedule = selectedSlot && selectedDay && (activeTab === 'SLOTS' || selectedResources.length > 0);
 
-  const SlotButton = ({ time, score, isGolden }: { time: string; score: number; isGolden: boolean }) => {
+  const RecurrencePanel = () => (
+    <div className="p-4 bg-[#f8fafc] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-300 border border-gray-100 shadow-sm mt-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[12px] font-medium text-gray-600">Repeat every</span>
+        <div className="flex items-center bg-gray-100 rounded-md px-1 py-0.5">
+          <input
+            type="number"
+            className="w-6 bg-transparent text-center text-[12px] font-semibold outline-none"
+            value={recurrenceConfig.interval}
+            onChange={(e) => updateRecurrence({ interval: parseInt(e.target.value) || 1 })}
+          />
+          <div className="flex flex-col ml-0.5">
+            <button onClick={() => updateRecurrence({ interval: recurrenceConfig.interval + 1 })}><ChevronUp size={8} className="text-gray-500 hover:text-blue-600" /></button>
+            <button onClick={() => updateRecurrence({ interval: Math.max(1, recurrenceConfig.interval - 1) })}><ChevronDown size={8} className="text-gray-500 hover:text-blue-600" /></button>
+          </div>
+        </div>
+        <div className="relative">
+          <select
+            className="bg-gray-100 pl-2 pr-6 py-1 rounded-md text-[12px] font-medium appearance-none outline-none cursor-pointer hover:bg-gray-200 transition-colors"
+            value={recurrenceConfig.unit}
+            onChange={(e) => updateRecurrence({ unit: e.target.value as RecurrenceConfig['unit'] })}
+          >
+            <option value="day">day</option>
+            <option value="week">week</option>
+            <option value="month">month</option>
+          </select>
+          <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[12px] font-medium text-gray-600">Repeat on</p>
+        <div className="flex gap-1.5">
+          {DAYS_OF_WEEK.map((d, i) => {
+            const isDaySelected = recurrenceConfig.days.includes(d);
+            return (
+              <button
+                key={i}
+                onClick={() => toggleDay(i)}
+                className={`w-6 h-6 rounded-full text-[9px] font-bold flex items-center justify-center transition-all ${
+                  isDaySelected ? 'bg-[#0176d3] text-white shadow-sm' : 'bg-gray-100 text-[#0176d3] hover:bg-gray-200'
+                }`}
+              >
+                {d}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-[12px] font-medium text-gray-600">Ends</p>
+        <div className="space-y-2.5">
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${recurrenceConfig.endType === 'never' ? 'border-[#0176d3]' : 'border-gray-400'}`}>
+              {recurrenceConfig.endType === 'never' && <div className="w-2 h-2 rounded-full bg-[#0176d3]" />}
+            </div>
+            <input type="radio" className="hidden" name="modalEndType" checked={recurrenceConfig.endType === 'never'} onChange={() => updateRecurrence({ endType: 'never' })} />
+            <span className={`text-[12px] font-medium transition-colors ${recurrenceConfig.endType === 'never' ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>Never</span>
+          </label>
+
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer group shrink-0">
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${recurrenceConfig.endType === 'on' ? 'border-[#0176d3]' : 'border-gray-400'}`}>
+                {recurrenceConfig.endType === 'on' && <div className="w-2 h-2 rounded-full bg-[#0176d3]" />}
+              </div>
+              <input type="radio" className="hidden" name="modalEndType" checked={recurrenceConfig.endType === 'on'} onChange={() => updateRecurrence({ endType: 'on' })} />
+              <span className={`text-[12px] font-medium transition-colors ${recurrenceConfig.endType === 'on' ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>On</span>
+            </label>
+            <div className={`flex-1 bg-gray-100 rounded-md px-3 py-1 text-[12px] font-medium text-gray-400 ${recurrenceConfig.endType !== 'on' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+              {recurrenceConfig.endDate || 'Select date...'}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer group shrink-0">
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${recurrenceConfig.endType === 'after' ? 'border-[#0176d3]' : 'border-gray-400'}`}>
+                {recurrenceConfig.endType === 'after' && <div className="w-2 h-2 rounded-full bg-[#0176d3]" />}
+              </div>
+              <input type="radio" className="hidden" name="modalEndType" checked={recurrenceConfig.endType === 'after'} onChange={() => updateRecurrence({ endType: 'after' })} />
+              <span className={`text-[12px] font-medium transition-colors ${recurrenceConfig.endType === 'after' ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}>After</span>
+            </label>
+            <div className={`flex flex-1 items-center bg-gray-100 rounded-md px-3 py-1 ${recurrenceConfig.endType !== 'after' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+              <span className="text-[12px] font-medium text-gray-400">{recurrenceConfig.occurrences}</span>
+              <span className="text-[11px] font-medium text-gray-400 ml-2">occurrences</span>
+              <div className="flex flex-col ml-auto">
+                <button onClick={() => updateRecurrence({ occurrences: recurrenceConfig.occurrences + 1 })}><ChevronUp size={8} className="text-gray-400 hover:text-blue-600" /></button>
+                <button onClick={() => updateRecurrence({ occurrences: Math.max(1, recurrenceConfig.occurrences - 1) })}><ChevronDown size={8} className="text-gray-400 hover:text-blue-600" /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const SlotButton: React.FC<{ time: string; score: number; isGolden: boolean }> = ({ time, score, isGolden }) => {
     const isSelected = selectedSlot === time;
     return (
       <div>
@@ -312,13 +464,20 @@ const RescheduleModal: React.FC<{
             <Calendar size={14} className={isSelected ? 'text-white' : 'text-gray-400'} />
             <span>{time}</span>
           </div>
-          <div className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-            isSelected ? 'bg-white/20 text-white' : isGolden ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
-          }`}>
-            {score}%
-          </div>
+          <span
+            onMouseEnter={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setScoreTooltip({ text: getScoreExplanation(score), top: rect.top, right: window.innerWidth - rect.right });
+            }}
+            onMouseLeave={() => setScoreTooltip(null)}
+            className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+              isSelected ? 'bg-white/20 text-white' : isGolden ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
+            }`}
+          >
+            {score}/100
+          </span>
         </button>
-        {isSelected && (
+        {isSelected && (activeTab === 'SLOTS' || selectedResources.length === 1) && (
           <div className="px-1 pt-2 pb-1 animate-in slide-in-from-top-2 duration-200">
             <div
               className="flex items-center gap-2.5 py-1 cursor-pointer"
@@ -331,6 +490,7 @@ const RescheduleModal: React.FC<{
               </div>
               <span className="text-[13px] font-bold text-gray-700 select-none">Make recurring</span>
             </div>
+            {isRecurring && <RecurrencePanel />}
           </div>
         )}
       </div>
@@ -384,15 +544,197 @@ const RescheduleModal: React.FC<{
     </div>
   );
 
-  const InfoBubble = ({ isResources = false }: { isResources?: boolean }) => (
-    <div className="bg-[#f0f9ff]/95 border border-[#dbeafe] p-3 rounded-xl flex items-start gap-3 mt-3">
-      <Info size={14} className="text-[#0070d2] shrink-0 mt-0.5" />
-      <p className="text-[11px] font-medium text-[#0070d2] leading-tight">
-        {isResources
-          ? 'Common slots available for all selected resources and assets'
-          : 'Service resource will be assigned based on availability for the preferred slot'
-        }
-      </p>
+  const InfoBubble = ({ isResources = false }: { isResources?: boolean }) => {
+    if (isResources && selectedResources.length <= 1 && !isRecurring) return null;
+    return (
+      <div className="bg-[#f0f9ff]/95 border border-[#dbeafe] p-3 rounded-xl flex items-start gap-3 mt-3">
+        <Info size={14} className="text-[#0070d2] shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          {(!isResources || !isRecurring) && (
+            <p className="text-[11px] font-medium text-[#0070d2] leading-tight">
+              {isResources
+                ? 'Common slots available for all selected resources and assets'
+                : 'Service resource will be assigned based on availability for the preferred slot'
+              }
+            </p>
+          )}
+          {isRecurring && (
+            <p className="text-[11px] font-medium text-[#0070d2] leading-tight">
+              {isResources
+                ? "Your selected resource will be available for 5 out of 6 appointments. An alternative resource will be assigned for the remaining appointments."
+                : "We'll try to assign the same resource each session, but this can't always be guaranteed."}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAvatar = (resource: typeof MOCK_RESOURCES[0], sizeClass = 'w-7 h-7') => {
+    if (resource.avatar === 'ROOM' || resource.avatar === 'VEHICLE') {
+      return (
+        <div className={`${sizeClass} rounded-full border bg-gray-100 flex items-center justify-center shrink-0`}>
+          {resource.avatar === 'ROOM' ? <Building2 size={12} className="text-gray-500" /> : <Car size={12} className="text-gray-500" />}
+        </div>
+      );
+    }
+    return <img src={resource.avatar} alt={resource.name} className={`${sizeClass} rounded-full border shrink-0`} />;
+  };
+
+  const UnifiedSearchBox = () => (
+    <div
+      className={`relative flex items-stretch bg-white border-2 rounded-xl h-11 transition-all shadow-sm ${isDropdownOpen ? 'border-blue-400' : 'border-gray-200 hover:border-gray-300'}`}
+      onClick={() => inputRef.current?.focus()}
+    >
+      {/* Type picker dropdown */}
+      <div className="relative shrink-0 self-stretch" ref={typeDropdownRef} onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => setIsTypeOpen(prev => !prev)}
+          className="flex items-center gap-2 px-3 h-full border-r border-gray-100 bg-gray-50/30 hover:bg-gray-100/60 transition-colors rounded-l-[10px]"
+        >
+          <div className="w-5 h-5 bg-[#0176d3] rounded-full flex items-center justify-center text-white shrink-0">
+            {resourceTypeFilter === 'PERSON' ? <User size={11} strokeWidth={3} /> : <Briefcase size={11} strokeWidth={3} />}
+          </div>
+          <span className="text-[13px] font-bold text-gray-700">{resourceTypeFilter === 'PERSON' ? 'People' : 'Assets'}</span>
+          <ChevronDown size={14} className={`text-gray-400 ml-0.5 transition-transform ${isTypeOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isTypeOpen && (
+          <div className="absolute z-[200] top-full left-0 mt-1.5 w-36 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1">
+            {[
+              { type: 'PERSON' as const, icon: <User size={13} />, label: 'People' },
+              { type: 'ASSET' as const, icon: <Briefcase size={13} />, label: 'Assets' },
+            ].map(({ type, icon, label }) => (
+              <button
+                key={type}
+                onClick={() => { setResourceTypeFilter(type); setIsTypeOpen(false); setSearchTerm(''); }}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 text-[12px] font-bold transition-colors ${
+                  resourceTypeFilter === type ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {icon}
+                {label}
+                {resourceTypeFilter === type && <Check size={12} className="ml-auto text-blue-600" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 items-center min-w-0 px-3">
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder={`Search ${resourceTypeFilter === 'PERSON' ? 'people' : 'assets'}...`}
+          className="flex-1 min-w-[100px] bg-transparent outline-none text-[13px]"
+          value={searchTerm}
+          onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
+          onFocus={() => setIsDropdownOpen(true)}
+        />
+      </div>
+
+      <Search className="text-gray-400 mr-3 shrink-0 self-center" size={16} />
+
+      {/* Dropdown Results */}
+      {isDropdownOpen && (
+        <div className="absolute z-[100] top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar py-1.5 px-1">
+            {filteredResources.length > 0 ? (() => {
+              const isSearching = searchTerm.trim().length > 0;
+              const isPeople = resourceTypeFilter === 'PERSON';
+              const preferred = isPeople && !isSearching ? filteredResources.slice(0, 3) : filteredResources;
+              const rest = isPeople && !isSearching ? filteredResources.slice(3) : [];
+
+              const renderRow = (res: typeof MOCK_RESOURCES[0]) => {
+                const isSelected = selectedResources.some(r => r.id === res.id);
+                return (
+                  <button
+                    key={res.id}
+                    onClick={(e) => { e.stopPropagation(); toggleResource(res); }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 transition-colors ${
+                      isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {renderAvatar(res)}
+                    <div className="flex-1">
+                      <p className="text-[12px] font-bold text-gray-800">{res.name}</p>
+                      <p className="text-[10px] text-gray-500">{res.role}</p>
+                    </div>
+                    {isSelected && <Check size={14} className="text-blue-600" />}
+                  </button>
+                );
+              };
+
+              return (
+                <>
+                  {isPeople && !isSearching && (
+                    <div className="px-2 pt-1 pb-0.5">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Preferred Resources</span>
+                    </div>
+                  )}
+                  {preferred.map(renderRow)}
+                  {rest.length > 0 && (
+                    <>
+                      <div className="mx-1 my-1.5 border-t border-gray-100" />
+                      <div className="px-2 pb-0.5">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">All Resources</span>
+                      </div>
+                      {rest.map(renderRow)}
+                    </>
+                  )}
+                </>
+              );
+            })() : (
+              <div className="px-3 py-3 text-center text-[12px] text-gray-400 italic">No matches found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const SelectedResourcesList = () => (
+    <div className={`space-y-1 mt-2 ${selectedResources.length > 4 ? 'max-h-[272px] overflow-y-auto custom-scrollbar pr-1' : ''}`}>
+      {selectedResources.map((res, index) => {
+        const isPrimary = index === 0;
+        const isOptional = optionalResourceIds.includes(res.id);
+        return (
+          <div key={res.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group relative">
+            {renderAvatar(res, 'w-10 h-10')}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] font-bold text-gray-800 truncate">{res.name}</p>
+                {isPrimary && (
+                  <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold uppercase tracking-wider">Primary</span>
+                )}
+                {isOptional && (
+                  <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-600 text-[9px] font-bold uppercase tracking-wider">Optional</span>
+                )}
+              </div>
+              <p className="text-[11px] text-gray-500 truncate">{res.role}</p>
+            </div>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {!isPrimary && (
+                <button
+                  onClick={() => toggleOptional(res.id)}
+                  className={`p-1.5 rounded-full transition-all ${
+                    isOptional ? 'text-purple-600 bg-purple-50' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                  }`}
+                  title={isOptional ? "Make Required" : "Make Optional"}
+                >
+                  <User size={16} />
+                </button>
+              )}
+              <button
+                onClick={() => removeResource(res.id)}
+                className="p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+                title="Remove"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -401,285 +743,198 @@ const RescheduleModal: React.FC<{
     : null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-[1200px] h-[900px] max-w-full max-h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-300 ease-out">
+    <>
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="bg-white w-[1200px] h-[900px] max-w-full max-h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-300 ease-out">
 
-        {/* Header */}
-        <div className="border-b border-gray-200 px-8 py-6 bg-gray-50/80 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="font-bold text-xl text-[#001639]">Reschedule Appointment</h2>
-            <p className="text-[10px] font-bold text-[#0176d3] uppercase tracking-wider mt-1">SELECT SLOTS OR RESOURCES</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <X size={24} className="text-gray-500" />
-          </button>
-        </div>
-
-        {/* Info Block — 4 labeled fields in one row */}
-        <div className="border-b border-gray-200 px-8 py-4 bg-white shrink-0">
-          <div className="grid grid-cols-4 gap-8">
+          {/* Header */}
+          <div className="border-b border-gray-200 px-8 py-6 bg-gray-50/80 flex items-center justify-between shrink-0">
             <div>
-              <p className="text-[11px] text-gray-400 font-medium mb-1">Appointment Name</p>
-              <p className="text-[13px] font-bold text-blue-600 truncate">{displayId} / {appointment.title}</p>
+              <h2 className="font-bold text-xl text-[#001639]">Reschedule Appointment</h2>
+              <p className="text-[10px] font-bold text-[#0176d3] uppercase tracking-wider mt-1">SELECT SLOTS OR RESOURCES</p>
             </div>
-            <div>
-              <p className="text-[11px] text-gray-400 font-medium mb-1">Appointment Type</p>
-              <p className="text-[13px] font-medium text-gray-800">{typeLabel}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-gray-400 font-medium mb-1">Scheduled Start</p>
-              <p className="text-[13px] font-medium text-gray-800">{appointment.startTime}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-gray-400 font-medium mb-1">Scheduled End</p>
-              <p className="text-[13px] font-medium text-gray-800">{appointment.endTime}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Body: sidebar tabs + main content */}
-        <div className="flex flex-1 overflow-hidden">
-
-          {/* Vertical Tab Sidebar */}
-          <div className="w-[240px] border-r border-gray-100 px-5 py-8 flex flex-col gap-2 shrink-0">
-            <button
-              onClick={() => { setActiveTab('SLOTS'); setSelectedResources([]); setSelectedSlot(null); setIsRecurring(false); }}
-              className={`w-full text-left px-4 py-4 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 ${
-                activeTab === 'SLOTS'
-                  ? 'bg-blue-50 text-[#0176d3] shadow-sm ring-1 ring-blue-100'
-                  : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-              }`}
-            >
-              <Calendar size={16} />
-              BY AVAILABLE SLOTS
-            </button>
-            <button
-              onClick={() => { setActiveTab('RESOURCES'); setSelectedSlot(null); setIsRecurring(false); }}
-              className={`w-full text-left px-4 py-4 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 ${
-                activeTab === 'RESOURCES'
-                  ? 'bg-blue-50 text-[#0176d3] shadow-sm ring-1 ring-blue-100'
-                  : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-              }`}
-            >
-              <Users size={16} />
-              BY REQUIRED RESOURCES
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <X size={24} className="text-gray-500" />
             </button>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-8 py-8">
-            {activeTab === 'SLOTS' ? (
-              /* SLOTS TAB */
-              <div className="grid grid-cols-2 gap-10 h-full items-start animate-in slide-in-from-left-2">
-                {/* Left: Calendar + info */}
-                <div className="sticky top-0">
-                  <DatePickerGrid />
-                  <InfoBubble />
-                </div>
-
-                {/* Right: Time Slots */}
-                <div className="space-y-6">
-                  {/* Golden Slots */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                      <Sparkles size={12} className="text-amber-500" />
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">GOLDEN SLOTS</p>
-                    </div>
-                    {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
-                    <div className="space-y-2">
-                      {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
-                    </div>
-                  </div>
-
-                  {/* Other Options */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OTHER OPTIONS</p>
-                    </div>
-                    {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
-                    <div className="space-y-2">
-                      {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
-                    </div>
-                  </div>
-                </div>
+          {/* Info Block — 4 labeled fields in one row */}
+          <div className="border-b border-gray-200 px-8 py-4 bg-white shrink-0">
+            <div className="grid grid-cols-4 gap-8">
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium mb-1">Appointment Name</p>
+                <p className="text-[13px] font-bold text-blue-600 truncate">{displayId} / {appointment.title}</p>
               </div>
-            ) : (
-              /* RESOURCES TAB */
-              <div className="grid grid-cols-2 gap-10 h-full items-stretch animate-in slide-in-from-right-2">
-                {/* Left: Resource selector + calendar */}
-                <div className="space-y-4 sticky top-0">
-                  {/* People / Assets toggle */}
-                  <div className="flex p-1 bg-gray-100 rounded-xl">
-                    <button
-                      onClick={() => setResourceTypeFilter('PERSON')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-bold transition-all ${
-                        resourceTypeFilter === 'PERSON' ? 'bg-white text-[#0176d3] shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <User size={14} />
-                      People
-                    </button>
-                    <button
-                      onClick={() => setResourceTypeFilter('ASSET')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-bold transition-all ${
-                        resourceTypeFilter === 'ASSET' ? 'bg-white text-[#0176d3] shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <Briefcase size={14} />
-                      Assets
-                    </button>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium mb-1">Appointment Type</p>
+                <p className="text-[13px] font-medium text-gray-800">{typeLabel}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium mb-1">Scheduled Start</p>
+                <p className="text-[13px] font-medium text-gray-800">{appointment.startTime}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium mb-1">Scheduled End</p>
+                <p className="text-[13px] font-medium text-gray-800">{appointment.endTime}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Body: sidebar tabs + main content */}
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* Vertical Tab Sidebar */}
+            <div className="w-[240px] border-r border-gray-100 px-5 py-8 flex flex-col gap-2 shrink-0">
+              <button
+                onClick={() => { setActiveTab('SLOTS'); setSelectedResources([]); setOptionalResourceIds([]); setSelectedSlot(null); setIsRecurring(false); }}
+                className={`w-full text-left px-4 py-4 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 ${
+                  activeTab === 'SLOTS'
+                    ? 'bg-blue-50 text-[#0176d3] shadow-sm ring-1 ring-blue-100'
+                    : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                }`}
+              >
+                <Calendar size={16} />
+                BY AVAILABLE SLOTS
+              </button>
+              <button
+                onClick={() => { setActiveTab('RESOURCES'); setSelectedSlot(null); setIsRecurring(false); }}
+                className={`w-full text-left px-4 py-4 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 ${
+                  activeTab === 'RESOURCES'
+                    ? 'bg-blue-50 text-[#0176d3] shadow-sm ring-1 ring-blue-100'
+                    : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                }`}
+              >
+                <Users size={16} />
+                BY REQUIRED RESOURCES
+              </button>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-8 py-8">
+              {activeTab === 'SLOTS' ? (
+                /* SLOTS TAB */
+                <div className="grid grid-cols-2 gap-10 h-full items-start animate-in slide-in-from-left-2">
+                  {/* Left: Calendar + info */}
+                  <div className="sticky top-0">
+                    <DatePickerGrid />
+                    <InfoBubble />
                   </div>
 
-                  {/* Search */}
-                  <div className="relative" ref={dropdownRef}>
-                    <div
-                      className={`flex items-center gap-2 p-1.5 border-2 rounded-xl bg-white shadow-sm transition-all cursor-text min-h-[48px] ${
-                        isDropdownOpen ? 'border-[#0176d3]' : 'border-gray-200 focus-within:border-blue-500'
-                      }`}
-                      onClick={() => inputRef.current?.focus()}
-                    >
-                      <div className="p-1 rounded-lg text-white shrink-0 bg-[#0070d2]">
-                        <User size={16} />
+                  {/* Right: Time Slots */}
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 px-1">
+                        <Sparkles size={12} className="text-amber-500" />
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">GOLDEN SLOTS</p>
                       </div>
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        placeholder="Search people..."
-                        className="flex-1 min-w-0 bg-transparent outline-none text-[13px] py-1"
-                        value={searchTerm}
-                        onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
-                        onFocus={() => setIsDropdownOpen(true)}
-                      />
-                      <Search className="text-gray-400 mx-1 shrink-0" size={16} />
+                      {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                      <div className="space-y-2">
+                        {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
+                      </div>
                     </div>
 
-                    {isDropdownOpen && (
-                      <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1">
-                        <div className="max-h-52 overflow-y-auto custom-scrollbar py-1.5 px-1">
-                          {filteredResources.length > 0 ? (
-                            filteredResources.map((resource) => {
-                              const isSelected = selectedResources.some(r => r.id === resource.id);
-                              return (
-                                <button
-                                  key={resource.id}
-                                  onClick={(e) => { e.stopPropagation(); toggleResource(resource); }}
-                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 transition-colors ${
-                                    isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
-                                  }`}
-                                >
-                                  <img src={resource.avatar} alt={resource.name} className="w-7 h-7 rounded-full border shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[12px] font-bold text-gray-800 truncate">{resource.name}</p>
-                                    <p className="text-[10px] text-gray-500">{resource.role}</p>
-                                  </div>
-                                  {isSelected && <Check size={14} className="text-blue-600" />}
-                                </button>
-                              );
-                            })
-                          ) : (
-                            <div className="px-3 py-3 text-center text-[12px] text-gray-400 italic">No matches found</div>
-                          )}
-                        </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 px-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OTHER OPTIONS</p>
+                      </div>
+                      {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                      <div className="space-y-2">
+                        {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* RESOURCES TAB */
+                <div className="grid grid-cols-2 gap-10 h-full items-stretch animate-in slide-in-from-right-2">
+                  {/* Left: Resource selector + calendar */}
+                  <div className="space-y-4 sticky top-0">
+                    <div ref={dropdownRef}>
+                      <UnifiedSearchBox />
+                      <SelectedResourcesList />
+                    </div>
+
+                    {selectedResources.length > 0 && (
+                      <div className="space-y-3 animate-in slide-in-from-top-2">
+                        <DatePickerGrid />
+                        <InfoBubble isResources={true} />
                       </div>
                     )}
                   </div>
 
-                  {/* Selected Resources List */}
-                  {selectedResources.length > 0 && (
-                    <div className="space-y-1">
-                      {selectedResources.map((res, index) => (
-                        <div key={res.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group">
-                          <img src={res.avatar} alt={res.name} className="w-10 h-10 rounded-full border border-gray-100" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-[13px] font-bold text-gray-800 truncate">{res.name}</p>
-                              {index === 0 && (
-                                <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[9px] font-bold uppercase tracking-wider">Primary</span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-gray-500 truncate">{res.role}</p>
+                  {/* Right: Slots or empty state */}
+                  <div className="flex flex-col h-full pt-1">
+                    {selectedResources.length === 0 ? (
+                      <div className="flex-1 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center gap-3 min-h-[400px]">
+                        <div className="bg-gray-50 p-4 rounded-full">
+                          <Users size={40} className="text-gray-200" />
+                        </div>
+                        <p className="text-[14px] font-bold text-gray-400">Assign resources to view shared slots</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6 animate-in slide-in-from-top-2">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 px-1">
+                            <Sparkles size={12} className="text-amber-500" />
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">GOLDEN SLOTS</p>
                           </div>
-                          <button
-                            onClick={() => removeResource(res.id)}
-                            className="p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
-                          >
-                            <X size={16} />
-                          </button>
+                          {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                          <div className="space-y-2">
+                            {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Calendar + info bubble (only when resource selected) */}
-                  {selectedResources.length > 0 && (
-                    <div className="space-y-3 animate-in slide-in-from-top-2">
-                      <DatePickerGrid />
-                      <InfoBubble isResources={true} />
-                    </div>
-                  )}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 px-1">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OTHER OPTIONS</p>
+                          </div>
+                          {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
+                          <div className="space-y-2">
+                            {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              )}
+            </div>
+          </div>
 
-                {/* Right: Slots or empty state */}
-                <div className="flex flex-col h-full pt-1">
-                  {selectedResources.length === 0 ? (
-                    <div className="flex-1 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center gap-3 min-h-[400px]">
-                      <div className="bg-gray-50 p-4 rounded-full">
-                        <Users size={40} className="text-gray-200" />
-                      </div>
-                      <p className="text-[14px] font-bold text-gray-400">Assign resources to view shared slots</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 animate-in slide-in-from-top-2">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-1">
-                          <Sparkles size={12} className="text-amber-500" />
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">GOLDEN SLOTS</p>
-                        </div>
-                        {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
-                        <div className="space-y-2">
-                          {goldenSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={true} />)}
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-1">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OTHER OPTIONS</p>
-                        </div>
-                        {selectedDateLabel && <p className="text-[11px] font-bold text-gray-600 px-1">{selectedDateLabel}</p>}
-                        <div className="space-y-2">
-                          {otherSlots.map(s => <SlotButton key={s.time} time={s.time} score={s.score} isGolden={false} />)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+          {/* Footer */}
+          <div className="px-8 py-5 border-t border-gray-200 bg-white flex items-center gap-4 shrink-0">
+            <button
+              onClick={onClose}
+              className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <ChevronLeft size={18} />
+              Back
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={!canReschedule}
+              className={`flex-[2] px-6 py-3 rounded-xl font-semibold text-sm transition-all shadow-md ${
+                canReschedule
+                  ? 'bg-[#0176d3] text-white hover:bg-blue-700 shadow-blue-600/20'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Reschedule
+            </button>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="px-8 py-5 border-t border-gray-200 bg-white flex items-center gap-4 shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <ChevronLeft size={18} />
-            Back
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={!canReschedule}
-            className={`flex-[2] px-6 py-3 rounded-xl font-semibold text-sm transition-all shadow-md ${
-              canReschedule
-                ? 'bg-[#0176d3] text-white hover:bg-blue-700 shadow-blue-600/20'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            Reschedule
-          </button>
-        </div>
       </div>
-    </div>
+
+      {scoreTooltip && createPortal(
+        <div
+          className="pointer-events-none fixed w-64 px-3 py-2.5 bg-[#032D60] text-white text-[11px] font-medium rounded-xl shadow-xl z-[20000] text-left leading-relaxed"
+          style={{ top: scoreTooltip.top, right: scoreTooltip.right, transform: 'translateY(calc(-100% - 8px))' }}
+        >
+          {scoreTooltip.text}
+          <span className="absolute top-full right-3 -mt-[1px] border-[6px] border-transparent border-t-[#032D60] block" />
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
 
