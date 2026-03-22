@@ -9,7 +9,7 @@ import {
   RefreshCw, List, Clock, AlertTriangle, CheckCircle2, MoreHorizontal, X, CheckCircle,
   Mountain, PlusCircle, UserCircle, Wand2, Headset, Map, Car, Building2, Phone, CalendarCheck,
   ExternalLink, Square, Coffee, DoorOpen, Truck, ChevronUp, Trash2, Info, Eye, Globe,
-  Lock, PersonStanding, Sparkles, Check
+  Lock, PersonStanding, Sparkles, Check, Ban
 } from 'lucide-react';
 import { MOCK_RESOURCES, MOCK_CUSTOMERS } from './constants';
 import { SchedulingState, ServiceMode, WorkType, RecurrenceConfig } from './types';
@@ -1764,16 +1764,10 @@ const App: React.FC = () => {
       {toast?.show && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
           {toast.type === 'warning' ? (
-            <div className="bg-[#dbeafe] shadow-lg rounded-xl py-4 px-6 flex items-center gap-4 min-w-[520px] border border-blue-100/50">
-              <div className="bg-[#005fb2] text-white rounded-full p-1 shrink-0 flex items-center justify-center w-6 h-6">
-                <Info size={18} fill="currentColor" />
-              </div>
-              <p className="text-[#005fb2] text-[15px] font-medium flex-1 leading-tight tracking-tight">
-                {toast.message}
-              </p>
-              <button onClick={() => setToast(null)} className="text-[#005fb2] hover:bg-blue-200/50 p-1.5 rounded-full transition-colors shrink-0">
-                <X size={18} />
-              </button>
+            <div className="bg-[#dbeafe] border border-blue-200 shadow-lg rounded-lg py-2.5 px-4 flex items-center gap-3 min-w-[400px]">
+              <div className="bg-[#005fb2] text-white rounded-full p-0.5 shrink-0"><Ban size={14} /></div>
+              <p className="text-[#005fb2] text-sm font-medium flex-1">{toast.message}</p>
+              <button onClick={() => setToast(null)} className="text-[#005fb2]/60 hover:bg-blue-200/50 p-1 rounded transition-colors shrink-0"><X size={14} /></button>
             </div>
           ) : (
             <div className="bg-[#c6f6d5] border border-[#9ae6b4] shadow-lg rounded-lg py-2.5 px-4 flex items-center gap-3 min-w-[400px]">
