@@ -1829,7 +1829,7 @@ const App: React.FC = () => {
         </div>
         <div className="flex items-center gap-6 h-full text-[13px] font-medium text-gray-600">
           <div className="flex items-center gap-1 cursor-pointer hover:text-blue-600 h-full px-1">Home <ChevronDown size={12} /></div>
-          <div className="flex items-center gap-1 cursor-pointer text-[#0176d3] border-b-[3px] border-[#0176d3] h-full px-1 relative top-[1px]">Unified Scheduling <ChevronDown size={12} className="text-gray-600" /></div>
+          <div className="flex items-center gap-1 cursor-pointer text-[#0176d3] border-b-[3px] border-[#0176d3] h-full px-1 relative top-[1px]">Workforce Scheduling <ChevronDown size={12} className="text-gray-600" /></div>
         </div>
       </nav>
 
@@ -1841,7 +1841,7 @@ const App: React.FC = () => {
       <div className="bg-[#f3f3f3] px-6 py-4 flex items-center justify-between border-b border-gray-200/50">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-[#e01a59] rounded-full flex items-center justify-center text-white shadow-sm border border-white/20"><Headset size={20} /></div>
-          <h1 className="text-2xl font-bold text-[#001639] tracking-tight">Unified Scheduling</h1>
+          <h1 className="text-2xl font-bold text-[#001639] tracking-tight">Workforce Scheduling</h1>
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-2 px-4 py-1.5 border border-gray-400 bg-white rounded-full text-sm font-bold text-[#0176d3] hover:bg-gray-50 shadow-sm active:scale-95"><Wand2 size={16} /><span>Optimize</span><ChevronDown size={14} /></button>
