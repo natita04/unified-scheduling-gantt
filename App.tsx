@@ -226,6 +226,9 @@ const getScoreExplanation = (score: number): string => {
   return "Lower alignment due to resource constraints and non-optimal travel distance at this time slot.";
 };
 
+// Feature flag — set to true to re-enable "Make recurring" in the reschedule flow
+const RESCHEDULE_SHOW_RECURRING = false;
+
 const RescheduleModal: React.FC<{
   appointment: {
     id: string;
@@ -477,7 +480,7 @@ const RescheduleModal: React.FC<{
             {score}/100
           </span>
         </button>
-        {isSelected && (activeTab === 'SLOTS' || selectedResources.length === 1) && (
+        {RESCHEDULE_SHOW_RECURRING && isSelected && (activeTab === 'SLOTS' || selectedResources.length === 1) && (
           <div className="px-1 pt-2 pb-1 animate-in slide-in-from-top-2 duration-200">
             <div
               className="flex items-center gap-2.5 py-1 cursor-pointer"
@@ -545,12 +548,13 @@ const RescheduleModal: React.FC<{
   );
 
   const InfoBubble = ({ isResources = false }: { isResources?: boolean }) => {
-    if (isResources && selectedResources.length <= 1 && !isRecurring) return null;
+    const effectiveIsRecurring = RESCHEDULE_SHOW_RECURRING && isRecurring;
+    if (isResources && selectedResources.length <= 1 && !effectiveIsRecurring) return null;
     return (
       <div className="bg-[#f0f9ff]/95 border border-[#dbeafe] p-3 rounded-xl flex items-start gap-3 mt-3">
         <Info size={14} className="text-[#0070d2] shrink-0 mt-0.5" />
         <div className="space-y-1">
-          {(!isResources || !isRecurring) && (
+          {(!isResources || !effectiveIsRecurring) && (
             <p className="text-[11px] font-medium text-[#0070d2] leading-tight">
               {isResources
                 ? 'Common slots available for all selected resources and assets'
@@ -558,7 +562,7 @@ const RescheduleModal: React.FC<{
               }
             </p>
           )}
-          {isRecurring && (
+          {effectiveIsRecurring && (
             <p className="text-[11px] font-medium text-[#0070d2] leading-tight">
               {isResources
                 ? "Your selected resource will be available for 5 out of 6 appointments. An alternative resource will be assigned for the remaining appointments."
